@@ -1,5 +1,5 @@
 import { puuid } from "../api/perfil_invocador/buscar_jugador.js";
-import { version_actual, campeones } from "../api/campeones.js";
+import { version_actual, campeones, runas } from "../api/campeones.js";
 import { cont } from "./buscador_jugador.js";
 
 // ─── Constantes fuera de los loops para no recrearlas en cada iteración ───────
@@ -48,39 +48,98 @@ function crearImg(src, className) {
     return img;
 }
 
-// ─── Carga de runas (una sola vez al importar el módulo) ──────────────────────
-
-const runas = await fetch("/Afk-Farm/JSON/runesReforged.json").then(r => r.json());
-
 // ─── Función principal ────────────────────────────────────────────────────────
 
 export async function historial_partidas(partidas) {
     const cont_historial = crearElemento("div", "cont_historial");
+    const cont_stats_wrapper = crearElemento("div", "cont_stats_wrapper");
+    
     cont.appendChild(cont_historial);
+    cont.appendChild(cont_stats_wrapper);
 
     for (const partida of partidas) {
         const jugador = partida.info.participants.find(p => p.puuid === puuid);
         if (!jugador) continue;
 
-        const cont_partida = construir_partida(jugador, partida.info);
+        const stats_partida = construir_stats(jugador, partida.info);
+        const cont_partida = construir_partida(jugador, partida.info, stats_partida);
+
         cont_historial.appendChild(cont_partida);
+        cont_stats_wrapper.appendChild(stats_partida);
     }
 }
+// ─── Construye el bloque visual de stats de una partida ────────────────────────────────
+
+function construir_stats(campeon, partida_info) {
+
+    const cont_stats = crearElemento("div", "cont_stats");
+    const cont = crearElemento("div", "stats_header", "Stats detalladas");
+    cont_stats.appendChild(cont);
+    const stats = [
+        `Daño a campeones: ${campeon.totalDamageDealtToChampions}`,
+        `Daño recibido: ${campeon.totalDamageTaken}`,
+        `Oro ganado: ${campeon.goldEarned}`,
+        `Visión: ${campeon.visionScore}`,
+        `Wards colocados: ${campeon.wardsPlaced}`,
+        `Wards destruidos: ${campeon.wardsKilled}`,
+    ];
+
+    stats.forEach(stat => {
+        const p = crearElemento("p", "stat", stat);
+        cont.appendChild(p);
+
+    }); 
+    construir_grafico(cont_stats, campeon);
+
+    return cont_stats; // ← esto faltaba
+
+}
+
+function construir_grafico(cont_stats, e) {
+    const canvas = document.createElement("canvas");
+    canvas.className = "stats_grafico";
+    cont_stats.appendChild(canvas);
+
+    const maxDaño = 35000;    // jugador que farmea bien
+    const maxOro = 15000;     // partida larga ~35min
+    const maxVision = 60;     // support activo
+    const maxWards = 25;    // Valor arbitrario para normalizar los wards
+
+    new Chart(canvas, {
+    type: "radar",
+    data: {
+        labels: ["Daño", "Daño recibido", "Oro", "Wards puestas", "Wards eliminadas"],
+        datasets: [{
+            label: e.championName,
+            data: [
+                (e.totalDamageDealtToChampions / maxDaño) * 100,
+                (e.totalDamageTaken / maxDaño) * 100,
+                (e.goldEarned / maxOro) * 100,
+                (e.wardsPlaced / maxWards) * 100,
+                (e.wardsKilled / maxWards) * 100,
+            ],
+        }]
+    },
+    options: {
+        scales: {
+            r: {
+                ticks: {
+                    display: false
+                }
+            }
+        }
+    }
+});
+}
+
 
 // ─── Construye el bloque visual de una partida ────────────────────────────────
 
-function construir_partida(e, info) {
+function construir_partida(e, info, stats_partida) {
     const cont_partida = crearElemento("div", "cont_partida");
 
     // Campeon
     const campeon_data = campeones.find(c => c.id === e.championName);
-    if (campeon_data) {
-        const img = crearImg(
-            `https://ddragon.leagueoflegends.com/cdn/${version_actual}/img/champion/${campeon_data.image.full}`,
-            "img_partida_campeon"
-        );
-        cont_partida.appendChild(img);
-    }
 
     // Runas + hechizos
     cont_partida.appendChild(construir_runas_y_hechizos(e));
@@ -96,10 +155,32 @@ function construir_partida(e, info) {
     cont_partida.appendChild(crearElemento("p", "linea_jugador", e.individualPosition));
     cont_partida.appendChild(crearElemento("p", "minions_asesinados", `CS: ${e.totalMinionsKilled}`));
 
+    const items = [e.item0, e.item1, e.item2, e.item3, e.item4, e.item5, e.item6, e.item7];
+    const items_cont = crearElemento("div", "items_cont");
+    items.forEach(itemId => {
+        if (itemId) {
+            const img = crearImg(
+                `https://ddragon.leagueoflegends.com/cdn/${version_actual}/img/item/${itemId}.png`,
+                "item_img"
+            );
+            items_cont.appendChild(img);
+        }
+    })
+    cont_partida.appendChild(items_cont);
+
+    const abrir_stats = crearElemento("button", "abrir_stats", "Ver stats");
+    cont_partida.appendChild(abrir_stats);
+
+    abrir_stats.addEventListener("click", () => {
+        const stats = document.querySelectorAll(".cont_stats");
+        stats.forEach(s => s.classList.remove("visible"));
+        stats_partida.classList.add("visible");
+    });
     // Color de fondo según resultado
-    aplicar_estilo_resultado(cont_partida, e.win);
+    aplicar_estilo_resultado(cont_partida, e.win, campeon_data);
 
     return cont_partida;
+
 }
 
 // ─── Runas y hechizos ─────────────────────────────────────────────────────────
@@ -157,12 +238,13 @@ function construir_info(e, info) {
 
 // ─── Estilo de fondo según resultado ─────────────────────────────────────────
 
-function aplicar_estilo_resultado(el, win) {
+function aplicar_estilo_resultado(el, win, campeon_data) {
+    console.log(campeon_data)
     if (win) {
-        el.style.backgroundColor = "rgba(0, 255, 34, 0.164)";
+        el.style.backgroundImage = `url(https://ddragon.leagueoflegends.com/cdn/img/champion/splash/${campeon_data.id}_0.jpg)`;        
         el.style.borderLeft       = "10px solid rgba(0, 255, 34, 0.36)";
     } else {
-        el.style.backgroundColor = "rgba(255, 0, 0, 0.164)";
+        el.style.backgroundImage = `url(https://ddragon.leagueoflegends.com/cdn/img/champion/splash/${campeon_data.id}_0.jpg)`,
         el.style.borderLeft       = "10px solid rgba(255, 0, 0, 0.36)";
     }
 }

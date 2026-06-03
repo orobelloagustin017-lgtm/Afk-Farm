@@ -20,6 +20,7 @@ body{
     display: flex;
     justify-content: flex-end;
     overflow: none;
+    z-index: 1;
 }
 
 .menu{
@@ -78,8 +79,14 @@ body{
 /* Buscador */
 
 .cont_invocador{
-    width: 100%;
-    
+    display: grid;
+    grid-template-columns: 50% 350px;
+}
+
+
+.perfil_cont{
+    width: 100%; 
+    grid-column: 1 ;
 }
 
 .buscador_cont{
@@ -96,6 +103,7 @@ body{
     border: none;
     color: rgb(182, 182, 182);
     background: none;
+    z-index: 2;
 }
 
 .buscar{
@@ -104,16 +112,65 @@ body{
     color: blue;
     font-weight: bold;
     cursor: pointer;  
+    z-index: 2;
 }
 
 /* historial de partidas */
 
 .cont_historial{
-    width: 50%;
     height: 400px;
+    margin-bottom: 15px;
     overflow-y: scroll;
     margin-left: 15px;
     font-family: Arial, Helvetica, sans-serif;
+    position: relative;
+    grid-row: 2;
+    grid-column: 1;
+}
+.cont_stats_wrapper {
+    grid-column: 2;
+    grid-row: 2;
+    position: sticky;
+    top: 0;
+}
+.abrir_stats{
+    border: none;
+    background: none;
+    color: rgba(255, 255, 255, 0.39);
+    font-weight: light;
+    cursor: pointer;
+    grid-row: 2;
+    grid-column: 6;
+}
+.stats_header{
+    display: flex;
+    flex-direction: column;
+    color: #E2E8F0;
+    font-size: small;
+    gap: 10px;
+    margin-left: 15px;
+    font-family: Arial, Helvetica, sans-serif;
+    font-weight: bold;
+}
+
+.cont_stats{
+    display: none;
+    gap: 10px;
+    margin-left: 15px;
+    font-family: Arial, Helvetica, sans-serif;
+    grid-row: 2;
+    grid-column: 2;
+}
+.cont_stats.visible{
+    display: flex;
+    align-items: center;    
+    justify-items: center; 
+}
+
+.stats_grafico{
+    background-color: #15204A;
+    border: 2px solid rgb(33, 120, 136);
+    border-radius: 3px;
 }
 
 /* ===== Scrollbar CSS ===== */
@@ -140,19 +197,31 @@ body{
 
 .cont_partida{
     display: grid;
-    grid-template-columns: repeat(7, auto)
-    ;
-    flex-direction: row;
+    grid-template-columns: 100px 80px 100px 180px 80px 80px 80px;
     align-items: center;
     margin: 5px;
     border-radius: 3px 0 0 3px;
+    background-position-x: 50%;
+    background-position-y: 20%;
+    background-repeat: no-repeat;
+    background-size: 100%;
+    object-fit: cover;
+    box-shadow: 200px 1px 195px -25px rgba(0,0,0,0.93) inset;
+    -webkit-box-shadow: 200px 1px 195px -25px rgba(0,0,0,0.93) inset;
+    -moz-box-shadow: 200px 1px 195px -25px rgba(0,0,0,0.93) inset;
 }
 
 .img_partida_campeon{
     width: 85px;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 3px 0 0 3px;
 }
 
 .info{
+    display: flex;
+    flex-direction: column;
+    align-items: center;
 }
 
 .campeon_partida{
@@ -179,6 +248,9 @@ body{
 
 .queue_mode{
     color: #E2E8F0;
+    text-align: center;
+    font-weight: bold;
+    font-family: Arial, Helvetica, sans-serif;
 }
 
 .estado_partida{
@@ -190,21 +262,20 @@ body{
 .linea_jugador{
     color: #E2E8F0;
     margin-left: 15px;
+    text-align: center;
+    font-weight: bold;
+    font-family: Arial, Helvetica, sans-serif;
 }
 
 .minions_asesinados{
     color: #E2E8F0;
-    margin-left: 15px;
     font-weight: bold;
+    text-align: center;
+    font-family: Arial, Helvetica, sans-serif;
 }
 
 /* perfil invocador */
 
-.perfil_cont{
-    width: 100%;
-    
-    
-}
 .perfil_header{
 
     display:grid;
@@ -215,7 +286,6 @@ body{
         300px;
 
     align-items:center;
-    align-content: center;
     padding:20px;
 }
 
@@ -310,21 +380,39 @@ body{
 
 .runas_cont{
     display: flex;
-    flex-direction: column;
+    justify-content: center;
     align-items: center;
+    grid-column: 1 / span 2;
 }
 .runas_primarias_img{
     width: 50px;
+    height: 50px;
 }
 
 /*Hechizos*/
 
 .summoner_img_cont{
     display: flex;
-    justify-content: center;
+    flex-direction: column;
 }
 
 .summoner{
     width: 25px;
     margin: 2px;
+}
+
+/*Items*/
+
+.items_cont{
+    display: grid;
+    grid-template-columns: repeat(8, 25px);
+    gap: 3px;
+    justify-items: center;
+    grid-row: 2;
+    grid-column: 1 / span 2;
+}
+
+.item_img{
+    width: 25px;
+    object-fit: contain;
 }

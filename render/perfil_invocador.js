@@ -1,96 +1,103 @@
 import { version_actual } from "../api/campeones.js";
 import { campeon_maestria } from "../api/perfil_invocador/campeon_maestria.js";
-import { cont } from "./buscador_jugador.js";
-import { nombre } from "./buscador_jugador.js";
+import { cont, nombre } from "./buscador_jugador.js";
 
-let perfil_cont = document.createElement("div");
-perfil_cont.className = "perfil_cont";
+// ─── Helper: crea un elemento con clase y texto opcional ──────────────────────
+
+function crearElemento(tag, className, textContent = "") {
+    const el = document.createElement(tag);
+    el.className = className;
+    if (textContent) el.textContent = textContent;
+    return el;
+}
+
+// ─── Helper: crea una imagen con src y clase ──────────────────────────────────
+
+function crearImg(src, className) {
+    const img = document.createElement("img");
+    img.src = src;
+    img.className = className;
+    return img;
+}
+
+// ─── Contenedor del perfil (se reutiliza entre búsquedas) ────────────────────
+
+const perfil_cont = crearElemento("div", "perfil_cont");
+
+// ─── Función principal ────────────────────────────────────────────────────────
 
 export async function perfil_invocador(respuesta_rank, respuesta_summoner) {
-   perfil_cont.innerHTML = "";
-   cont.appendChild(perfil_cont);
-   const rank = await respuesta_rank.json();
-   const summoner = await respuesta_summoner.json();
-   const icono_invocador = summoner.profileIconId;
+    perfil_cont.innerHTML = "";
+    cont.appendChild(perfil_cont);
 
-   rank.forEach((e) => {
-      console.log(summoner)
+    const rank     = await respuesta_rank.json();
+    const summoner = await respuesta_summoner.json();
 
-     
-      //Perfil
-         let perfil = document.createElement("div");
-         perfil_cont.appendChild(perfil);
-         perfil.className = "perfil";
+    rank.forEach(e => {
+        const perfil_header = construir_header(summoner, e);
+        perfil_cont.appendChild(perfil_header);
+    });
 
-         //Perfil Header
-            let perfil_header = document.createElement("div");
-            perfil_cont.appendChild(perfil_header);
-            perfil_header.className = "perfil_header";
+    campeon_maestria();
+}
 
-            //Perfil Icono
-               let perfil_icono = document.createElement("div");
-               perfil_header.appendChild(perfil_icono);
-               perfil_icono.className = "perfil_icono";
+// ─── Header del perfil ────────────────────────────────────────────────────────
 
-               let icono_img = document.createElement("img");
-               perfil_icono.appendChild(icono_img);
-               icono_img.className = "icono_invocador";
-               icono_img.src = `https://ddragon.leagueoflegends.com/cdn/${version_actual}/img/profileicon/${icono_invocador}.png`;
+function construir_header(summoner, e) {
+    const perfil_header = crearElemento("div", "perfil_header");
 
-               let borde = document.createElement("div");
-               perfil_icono.appendChild(borde);
-               borde.className = "borde";
+    perfil_header.appendChild(construir_icono(summoner));
+    perfil_header.appendChild(construir_info(e));
+    perfil_header.appendChild(construir_rango(e));
 
-               let nivel = document.createElement("span");
-               borde.appendChild(nivel);
-               nivel.textContent = summoner.summonerLevel;
-               nivel.className = "nivel";
+    return perfil_header;
+}
 
-            //Perfil Icono
+// ─── Icono del invocador ──────────────────────────────────────────────────────
 
-            //Perfil Info
-               let perfil_info = document.createElement("div");
-               perfil_header.appendChild(perfil_info);
-               perfil_info.className = "perfil_info";
+function construir_icono(summoner) {
+    const perfil_icono = crearElemento("div", "perfil_icono");
 
-               let invocador = document.createElement("h1");
-               perfil_info.appendChild(invocador);
-               invocador.className = "invocador";
-               invocador.textContent = nombre;
+    const icono_img = crearImg(
+        `https://ddragon.leagueoflegends.com/cdn/${version_actual}/img/profileicon/${summoner.profileIconId}.png`,
+        "icono_invocador"
+    );
+    perfil_icono.appendChild(icono_img);
 
-               let wins_losses = document.createElement("p");
-               perfil_info.appendChild(wins_losses);
-               wins_losses.classList = "wins_losses";
-               wins_losses.textContent = `Wins ${e.wins} Losses ${e.losses}`;
-            //Perfil Info
+    const borde = crearElemento("div", "borde");
+    const nivel = crearElemento("span", "nivel", summoner.summonerLevel);
+    borde.appendChild(nivel);
+    perfil_icono.appendChild(borde);
 
-            //Perfil Rango
-               let perfil_rango = document.createElement("div");
-               perfil_header.appendChild(perfil_rango);
-               perfil_rango.className = "perfil_rango";
+    return perfil_icono;
+}
 
-               let tier_img_cont = document.createElement("div");
-               perfil_rango.appendChild(tier_img_cont);
-               tier_img_cont.className = "tier_img_cont";
+// ─── Info del invocador ───────────────────────────────────────────────────────
 
-               let tier_img = document.createElement("img");
-               tier_img_cont.appendChild(tier_img);
-               tier_img.className = "img_tier"
-               tier_img.src =`https://raw.communitydragon.org/latest/plugins/rcp-fe-lol-static-assets/global/default/images/ranked-emblem/emblem-${e.tier.toLowerCase()}.png`;
+function construir_info(e) {
+    const perfil_info = crearElemento("div", "perfil_info");
 
-               let rank = document.createElement("span");
-               perfil_rango.appendChild(rank);
-               rank.className = "rank";
-               rank.textContent = `${e.tier} ${e.rank}`;
+    perfil_info.appendChild(crearElemento("h1", "invocador", nombre));
+    perfil_info.appendChild(crearElemento("p", "wins_losses", `Wins ${e.wins} Losses ${e.losses}`));
 
-               let leaguePoints = document.createElement("span");
-               perfil_rango.appendChild(leaguePoints);
-               leaguePoints.className = "lp";
-               leaguePoints.textContent = `LP ${e.leaguePoints}`;
-            //Perfil Rango
+    return perfil_info;
+}
 
-         //Perfil Header
-      //Perfil
-   });
-   campeon_maestria();
+// ─── Rango del invocador ──────────────────────────────────────────────────────
+
+function construir_rango(e) {
+    const perfil_rango = crearElemento("div", "perfil_rango");
+
+    const tier_img_cont = crearElemento("div", "tier_img_cont");
+    const tier_img = crearImg(
+        `https://raw.communitydragon.org/latest/plugins/rcp-fe-lol-static-assets/global/default/images/ranked-emblem/emblem-${e.tier.toLowerCase()}.png`,
+        "img_tier"
+    );
+    tier_img_cont.appendChild(tier_img);
+    perfil_rango.appendChild(tier_img_cont);
+
+    perfil_rango.appendChild(crearElemento("span", "rank", `${e.tier} ${e.rank}`));
+    perfil_rango.appendChild(crearElemento("span", "lp", `LP ${e.leaguePoints}`));
+
+    return perfil_rango;
 }
