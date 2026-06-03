@@ -1,133 +1,180 @@
 import { puuid } from "../api/perfil_invocador/buscar_jugador.js";
-import { version_actual } from "../api/campeones.js";
-import { campeones } from "../api/campeones.js";
+import { version_actual, campeones } from "../api/campeones.js";
 import { cont } from "./buscador_jugador.js";
 
-const app = document.getElementById("app");
-let cont_historial = document.createElement("div");
+// ─── Constantes fuera de los loops para no recrearlas en cada iteración ───────
 
-export async function historial_partidas (partidas){
+const SPELLS = {
+    1:  "SummonerBoost",
+    3:  "SummonerExhaust",
+    4:  "SummonerFlash",
+    6:  "SummonerHaste",
+    7:  "SummonerHeal",
+    11: "SummonerSmite",
+    12: "SummonerTeleport",
+    13: "SummonerMana",
+    14: "SummonerDot",
+    21: "SummonerBarrier",
+    32: "SummonerSnowball",
+};
 
+const QUEUE_NAMES = {
+    420:  "Ranked Solo/Duo",
+    440:  "Flex",
+    450:  "Aram",
+    400:  "Normal Draft",
+    430:  "Normal Blind",
+    1700: "Arena",
+    900:  "Urf",
+    1020: "One for All",
+    1400: "Ultimate Spellbooks",
+};
+
+// ─── Helper: crea un elemento con clase y texto opcional ──────────────────────
+
+function crearElemento(tag, className, textContent = "") {
+    const el = document.createElement(tag);
+    el.className = className;
+    if (textContent) el.textContent = textContent;
+    return el;
+}
+
+// ─── Helper: crea una imagen con src y clase ──────────────────────────────────
+
+function crearImg(src, className) {
+    const img = document.createElement("img");
+    img.src = src;
+    img.className = className;
+    return img;
+}
+
+// ─── Carga de runas (una sola vez al importar el módulo) ──────────────────────
+
+const runas = await fetch("/Afk-Farm/JSON/runesReforged.json").then(r => r.json());
+
+// ─── Función principal ────────────────────────────────────────────────────────
+
+export async function historial_partidas(partidas) {
+    const cont_historial = crearElemento("div", "cont_historial");
     cont.appendChild(cont_historial);
-    cont_historial.className = "cont_historial"
 
+    for (const partida of partidas) {
+        const jugador = partida.info.participants.find(p => p.puuid === puuid);
+        if (!jugador) continue;
 
-    partidas.forEach(dato => {
+        const cont_partida = construir_partida(jugador, partida.info);
+        cont_historial.appendChild(cont_partida);
+    }
+}
 
-        for (const e of dato.info.participants){
+// ─── Construye el bloque visual de una partida ────────────────────────────────
 
-            if(e.puuid === puuid){
+function construir_partida(e, info) {
+    const cont_partida = crearElemento("div", "cont_partida");
 
-                let cont_partida = document.createElement("div");
-                cont_historial.appendChild(cont_partida);
-                cont_partida.className = "cont_partida";
+    // Campeon
+    const campeon_data = campeones.find(c => c.id === e.championName);
+    if (campeon_data) {
+        const img = crearImg(
+            `https://ddragon.leagueoflegends.com/cdn/${version_actual}/img/champion/${campeon_data.image.full}`,
+            "img_partida_campeon"
+        );
+        cont_partida.appendChild(img);
+    }
 
-                let img_campeon = document.createElement("img");
-                img_campeon.className = "img_partida_campeon";
-                campeones.forEach(c => {
-                    if(e.championName === c.id){
-                        console.log(e.championName)
-                        img_campeon.src = `https://ddragon.leagueoflegends.com/cdn/${version_actual}/img/champion/${c.image.full}`;
-                        cont_partida.appendChild(img_campeon);
+    // Runas + hechizos
+    cont_partida.appendChild(construir_runas_y_hechizos(e));
 
-                    }
-                })
+    // Info (campeón, duración, KDA, win/loss)
+    cont_partida.appendChild(construir_info(e, info));
 
-                let info = document.createElement("div");
-                cont_partida.appendChild(info);
-                info.className = "info";
+    // Modo de juego
+    const queue_mode = crearElemento("p", "queue_mode", QUEUE_NAMES[info.queueId] ?? "Desconocido");
+    cont_partida.appendChild(queue_mode);
 
-                //nombre del campeon utilizado en esa partida
-                let campeon = document.createElement("h3");
-                campeon.className = "campeon_partida";
-                campeon.textContent = e.championName;
-                info.appendChild(campeon);
+    // Línea y CS
+    cont_partida.appendChild(crearElemento("p", "linea_jugador", e.individualPosition));
+    cont_partida.appendChild(crearElemento("p", "minions_asesinados", `CS: ${e.totalMinionsKilled}`));
 
-                //tiempo de la partida
-                let minutos_partida = document.createElement("p");
-                minutos_partida.className = "minutos_partida";
-                let calculo_tiempo_partida = dato.info.gameDuration / 60; //calculamos los minutos
+    // Color de fondo según resultado
+    aplicar_estilo_resultado(cont_partida, e.win);
 
-                let minutos = Math.trunc(calculo_tiempo_partida); 
-                //Separamos minutos y segundos
-                let segundos = Math.round((calculo_tiempo_partida - minutos) * 60);
+    return cont_partida;
+}
 
-                //formateamos segundos para que tengan un 0 a la izquierda si es necesario
-                let segundos_formateados = String(segundos).padStart(2, '0'); 
-                minutos_partida.textContent = `${minutos}:${segundos_formateados}`;
-                info.appendChild(minutos_partida)
+// ─── Runas y hechizos ─────────────────────────────────────────────────────────
 
+function construir_runas_y_hechizos(e) {
+    const runas_cont = crearElemento("div", "runas_cont");
 
-                //imprimo el kda de la partida
-                let kda = document.createElement("p");
-                kda.className = "kda";
-                kda.textContent = `${e.kills + '/' + e.deaths + '/' + e.assists}`;
-                info.appendChild(kda);
-                
-                //imprimo si fue una partida ganada/win o perdida/loss
-                let estado_partida = document.createElement("p");
-                estado_partida.className = "estado_partida";
-                info.appendChild(estado_partida);
+    // Runa principal
+    const runaPrincipalId = e.perks.styles[0].selections[0].perk;
+    const runa = buscar_runa(runaPrincipalId);
+    if (runa) {
+        runas_cont.appendChild(crearImg(
+            `https://ddragon.leagueoflegends.com/cdn/img/${runa.icon}`,
+            "runas_primarias_img"
+        ));
+    }
 
-                //condicional por que en el api devuelve como tipo booleano el win
-                //asi que si es true es ganada/win con un cambio de color en el texto a verde
-                //y si es perdida/loss con un cambio a rojo
-                if(e.win === true){
-                    estado_partida.textContent = "Win";
-                    estado_partida.style.color = "#22C55E";
-                }else{
-                    estado_partida.textContent = "Loss";
-                    estado_partida.style.color = "#EF4444";
-                }
-                let queue_mode = document.createElement("p");
-                cont_partida.appendChild(queue_mode);
-                switch (dato.info.queueId) {
-                    case 420:
-                        queue_mode.textContent = "Ranked Solo/Duo"
-                        break;
-                    case 440:
-                        queue_mode.textContent = "Flex"
-                        break;
-                    case 450:
-                        queue_mode.textContent = "Aram"
-                        break;
-                    case 400:
-                        queue_mode.textContent = "Normal Draft"
-                        break;
-                    case 430:
-                        queue_mode.textContent = "Normal Blind"
-                        break;
-                    case 1700:
-                        queue_mode.textContent = "Arena"
-                        break;
-                    case 900:
-                        queue_mode.textContent = "Urf"
-                        break;
-                    case 1020:
-                        queue_mode.textContent = "One for all"
-                        break;
-                    case 1400:
-                        queue_mode.textContent = "Ultimate Spellbooks"
-                        break;
-                    default:
-                        break;
-                }
-                
-                let linea_jugador = document.createElement("p");
-                linea_jugador.className = "linea_jugador"
-                linea_jugador.textContent = e.individualPosition;
-                cont_partida.appendChild(linea_jugador);
+    // Hechizos
+    const summoner_cont = crearElemento("div", "summoner_img_cont");
+    summoner_cont.appendChild(crearImg(url_spell(e.summoner1Id), "summoner"));
+    summoner_cont.appendChild(crearImg(url_spell(e.summoner2Id), "summoner"));
+    runas_cont.appendChild(summoner_cont);
 
-                let minions_asesinados = document.createElement("p");
-                minions_asesinados.className = "minions_asesinados"
-                minions_asesinados.textContent = `CS: ${e.totalMinionsKilled}`
-                cont_partida.appendChild(minions_asesinados)
+    return runas_cont;
+}
 
-                console.log(e.puuid)
+function url_spell(id) {
+    return `https://ddragon.leagueoflegends.com/cdn/${version_actual}/img/spell/${SPELLS[id]}.png`;
+}
 
-            }
+// ─── Info de la partida ───────────────────────────────────────────────────────
 
+function construir_info(e, info) {
+    const contenedor = crearElemento("div", "info");
+
+    // Nombre del campeón
+    contenedor.appendChild(crearElemento("h3", "campeon_partida", e.championName));
+
+    // Duración
+    const totalMin = info.gameDuration / 60;
+    const minutos  = Math.trunc(totalMin);
+    const segundos = String(Math.round((totalMin - minutos) * 60)).padStart(2, "0");
+    contenedor.appendChild(crearElemento("p", "minutos_partida", `${minutos}:${segundos}`));
+
+    // KDA
+    contenedor.appendChild(crearElemento("p", "kda", `${e.kills}/${e.deaths}/${e.assists}`));
+
+    // Win / Loss
+    const estado = crearElemento("p", "estado_partida", e.win ? "WIN" : "LOSS");
+    estado.style.color = e.win ? "#22C55E" : "#EF4444";
+    contenedor.appendChild(estado);
+
+    return contenedor;
+}
+
+// ─── Estilo de fondo según resultado ─────────────────────────────────────────
+
+function aplicar_estilo_resultado(el, win) {
+    if (win) {
+        el.style.backgroundColor = "rgba(0, 255, 34, 0.164)";
+        el.style.borderLeft       = "10px solid rgba(0, 255, 34, 0.36)";
+    } else {
+        el.style.backgroundColor = "rgba(255, 0, 0, 0.164)";
+        el.style.borderLeft       = "10px solid rgba(255, 0, 0, 0.36)";
+    }
+}
+
+// ─── Buscar runa por ID ───────────────────────────────────────────────────────
+
+function buscar_runa(id) {
+    for (const categoria of runas) {
+        for (const slot of categoria.slots) {
+            const runa = slot.runes.find(r => r.id === id);
+            if (runa) return runa;
         }
-
-    });
+    }
+    return null;
 }

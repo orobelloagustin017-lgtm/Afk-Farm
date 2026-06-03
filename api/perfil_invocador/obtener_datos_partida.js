@@ -7,7 +7,7 @@ import { historial_partidas } from "../../render/historial_partidas.js";
 
 const app = document.getElementById("app");
 export let campeones = [];
-export let key = 'RGAPI-4d39fb8a-3f25-4fb3-b174-aacb64ca6862';
+export let key = 'RGAPI-9fc3a416-6997-4c5b-af03-4b4ab84f1c4b';
 
 
 /* 
@@ -40,7 +40,6 @@ export async function obtener_datos_partida(){
     let partidas = await Promise.all(promesas);
 
     historial_partidas(partidas);
-    console.log(partidas)
 }
 /*
 
