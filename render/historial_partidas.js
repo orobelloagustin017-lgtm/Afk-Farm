@@ -239,7 +239,6 @@ function construir_info(e, info) {
 // ─── Estilo de fondo según resultado ─────────────────────────────────────────
 
 function aplicar_estilo_resultado(el, win, campeon_data) {
-    console.log(campeon_data)
     if (win) {
         el.style.backgroundImage = `url(https://ddragon.leagueoflegends.com/cdn/img/champion/splash/${campeon_data.id}_0.jpg)`;        
         el.style.borderLeft       = "10px solid rgba(0, 255, 34, 0.36)";

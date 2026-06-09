@@ -7,7 +7,7 @@ import { historial_partidas } from "../../render/historial_partidas.js";
 
 const app = document.getElementById("app");
 export let campeones = [];
-export let key = 'RGAPI-9fc3a416-6997-4c5b-af03-4b4ab84f1c4b';
+export let key = 'RGAPI-55d07289-a55e-4bbc-b067-a76c772a4bf1';
 
 
 /* 

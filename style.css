@@ -80,7 +80,7 @@ body{
 
 .cont_invocador{
     display: grid;
-    grid-template-columns: 50% 350px;
+    grid-template-columns: 50% 50%;
 }
 
 
@@ -118,7 +118,7 @@ body{
 /* historial de partidas */
 
 .cont_historial{
-    height: 400px;
+    height: 500px;
     margin-bottom: 15px;
     overflow-y: scroll;
     margin-left: 15px;
@@ -199,7 +199,7 @@ body{
     display: grid;
     grid-template-columns: 100px 80px 100px 180px 80px 80px 80px;
     align-items: center;
-    margin: 5px;
+    margin-bottom: 5px;
     border-radius: 3px 0 0 3px;
     background-position-x: 50%;
     background-position-y: 20%;
@@ -415,4 +415,51 @@ body{
 .item_img{
     width: 25px;
     object-fit: contain;
+}
+
+
+/*maestria*/
+
+.cont_principales{
+    display: grid;
+    grid-template-columns: repeat(3, 150px);
+    align-items: center;
+    grid-column: 2 / span 2;
+}
+
+.cont_campeon_maestria{
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin: 15px;
+
+}
+
+.img_maestria{
+    width: 100px;
+    border-radius: 50%;
+    border: 1px solid rgba(183, 14, 14, 0.75);
+    box-shadow: -1px 1px 25px 0px rgba(168, 10, 10, 0.75);
+    -webkit-box-shadow: -1px 1px 25px 0px rgba(168,10,10,0.75);
+    -moz-box-shadow: -1px 1px 25px 0px rgba(168,10,10,0.75);
+}
+
+.nombre_campeon{
+    color: white;
+}
+
+.puntos_maestria{
+    color: white;
+}
+.top-1{
+    grid-row: 1;
+    grid-column: 2;
+}
+
+.top-1 img{
+    width: 150px;
+    border: 1px solid rgba(203, 24, 24, 0.75);
+    box-shadow: -1px 1px 25px 0px rgba(255, 55, 0, 0.75);
+    -webkit-box-shadow: -1px 1px 25px 0px rgba(255, 55, 0, 0.75);
+    -moz-box-shadow: -1px 1px 25px 0px rgba(255, 55, 0, 0.75);
 }
